@@ -6,6 +6,20 @@
   let currentFilter = "all";
   let scanTimer = null;
 
+  function currentUrl() {
+    return new URL(window.location.href);
+  }
+
+  function isListPage() {
+    const path = currentUrl().pathname;
+    return path === "/sudokus" || path === "/filter";
+  }
+
+  function isPuzzlePage() {
+    const url = currentUrl();
+    return url.pathname === "/sudoku" && url.searchParams.has("id");
+  }
+
   function isPlayablePuzzleLink(anchor) {
     try {
       const url = new URL(anchor.href, window.location.href);
@@ -18,8 +32,8 @@
   }
 
   function findPuzzleRow(anchor) {
-    // Prefer the list item used by the current CTC page. Fall back to nearby
-    // row-like containers so the extension remains useful if the markup changes.
+    // Prefer the list item used by the current CTC list/filter pages. Fall back
+    // to nearby row-like containers so layout changes fail softly.
     return anchor.closest("li, tr, article, section, div") || anchor.parentElement;
   }
 
@@ -49,7 +63,7 @@
     return entries;
   }
 
-  function ensureToolbar() {
+  function ensureListToolbar() {
     if (document.querySelector(".ctc-progress-toolbar")) {
       return;
     }
@@ -85,68 +99,40 @@
     }
   }
 
-  function ensureControls(entry) {
-    let controls = entry.row.querySelector(`.ctc-progress-controls[data-key="${CSS.escape(entry.key)}"]`);
-    if (controls) {
-      return controls;
+  function ensureListBadge(entry) {
+    let badge = entry.row.querySelector(`.ctc-progress-list-badge[data-key="${CSS.escape(entry.key)}"]`);
+    if (badge) {
+      return badge;
     }
 
-    controls = document.createElement("span");
-    controls.className = "ctc-progress-controls";
-    controls.dataset.key = entry.key;
-    controls.innerHTML = `
-      <span class="ctc-progress-badge" aria-live="polite"></span>
-      <button type="button" data-status="todo">Todo</button>
-      <button type="button" data-status="solved">Solved</button>
-      <button type="button" data-status="clear">Clear</button>
-    `;
-
-    controls.addEventListener("click", async (event) => {
-      const button = event.target.closest("button[data-status]");
-      if (!button) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const requestedStatus = button.dataset.status;
-      try {
-        if (requestedStatus === "clear") {
-          await storage.clearStatusByKey(entry.key);
-        } else {
-          await storage.setStatusByKey(entry.key, requestedStatus, entry.url);
-        }
-        await refresh();
-      } catch (error) {
-        console.warn("CTC Progress Tracker: failed to update status", error);
-      }
-    });
-
-    entry.anchor.insertAdjacentElement("afterend", controls);
-    return controls;
+    badge = document.createElement("span");
+    badge.className = "ctc-progress-badge ctc-progress-list-badge";
+    badge.dataset.key = entry.key;
+    badge.setAttribute("aria-live", "polite");
+    entry.anchor.insertAdjacentElement("afterend", badge);
+    return badge;
   }
 
-  function applyStatus(entry, record) {
-    const status = record ? storage.statusCodeToName(record.s) : "untouched";
-    const controls = ensureControls(entry);
-    const badge = controls.querySelector(".ctc-progress-badge");
-
-    entry.row.classList.remove(
+  function removeStateClasses(element) {
+    element.classList.remove(
       `${STATE_CLASS_PREFIX}opened`,
       `${STATE_CLASS_PREFIX}todo`,
       `${STATE_CLASS_PREFIX}solved`
     );
+  }
 
+  function applyListStatus(entry, record) {
+    const status = record ? storage.statusCodeToName(record.s) : "untouched";
+    const badge = ensureListBadge(entry);
+
+    removeStateClasses(entry.row);
     if (status !== "untouched") {
       entry.row.classList.add(`${STATE_CLASS_PREFIX}${status}`);
     }
 
     entry.row.dataset.ctcProgressStatus = status;
     badge.textContent = status === "untouched" ? "" : status;
-    controls.querySelector('[data-status="todo"]').disabled = status === "todo";
-    controls.querySelector('[data-status="solved"]').disabled = status === "solved";
-    controls.querySelector('[data-status="clear"]').disabled = status === "untouched";
+    badge.hidden = status === "untouched";
   }
 
   function applyFilter() {
@@ -158,40 +144,94 @@
     }
   }
 
-  async function refresh() {
-    ensureToolbar();
+  async function refreshListPage() {
+    ensureListToolbar();
     const entries = getPuzzleEntries();
     const statuses = await storage.getStatusesForKeys(entries.map((entry) => entry.key));
 
     for (const entry of entries) {
-      ensureControls(entry);
-      applyStatus(entry, statuses[entry.key]);
-      bindOpenTracking(entry);
+      applyListStatus(entry, statuses[entry.key]);
     }
 
     applyFilter();
   }
 
-  function bindOpenTracking(entry) {
-    if (entry.anchor.dataset.ctcProgressBound === "true") {
-      return;
+  function ensurePuzzlePanel() {
+    let panel = document.querySelector(".ctc-progress-puzzle-panel");
+    if (panel) {
+      return panel;
     }
 
-    entry.anchor.dataset.ctcProgressBound = "true";
-    entry.anchor.addEventListener("click", () => {
-      storage.markOpenedIfEmpty(entry.url)
-        .then(() => refresh())
-        .catch((error) => {
-          console.warn("CTC Progress Tracker: failed to mark opened", error);
-        });
-    }, { capture: true });
+    panel = document.createElement("div");
+    panel.className = "ctc-progress-puzzle-panel";
+    panel.innerHTML = `
+      <span class="ctc-progress-toolbar-title">Progress</span>
+      <span class="ctc-progress-badge" aria-live="polite"></span>
+      <button type="button" data-status="todo">Todo</button>
+      <button type="button" data-status="solved">Solved</button>
+      <button type="button" data-status="clear">Clear</button>
+    `;
+
+    panel.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-status]");
+      if (!button) {
+        return;
+      }
+
+      const key = storage.keyFromUrl(window.location.href);
+      const requestedStatus = button.dataset.status;
+
+      try {
+        if (requestedStatus === "clear") {
+          await storage.clearStatusByKey(key);
+        } else {
+          await storage.setStatusByKey(key, requestedStatus, window.location.href);
+        }
+        await refreshPuzzlePage();
+      } catch (error) {
+        console.warn("CTC Progress Tracker: failed to update puzzle status", error);
+      }
+    });
+
+    const main = document.querySelector("main") || document.body;
+    main.insertBefore(panel, main.firstChild);
+    return panel;
   }
 
-  function scheduleRefresh() {
+  function applyPuzzleStatus(record) {
+    const status = record ? storage.statusCodeToName(record.s) : "untouched";
+    const panel = ensurePuzzlePanel();
+    const badge = panel.querySelector(".ctc-progress-badge");
+
+    removeStateClasses(panel);
+    if (status !== "untouched") {
+      panel.classList.add(`${STATE_CLASS_PREFIX}${status}`);
+    }
+
+    badge.textContent = status === "untouched" ? "untouched" : status;
+    panel.querySelector('[data-status="todo"]').disabled = status === "todo";
+    panel.querySelector('[data-status="solved"]').disabled = status === "solved";
+    panel.querySelector('[data-status="clear"]').disabled = status === "untouched";
+  }
+
+  async function refreshPuzzlePage() {
+    const key = storage.keyFromUrl(window.location.href);
+    const record = await storage.getStatusByKey(key);
+    applyPuzzleStatus(record);
+  }
+
+  async function initPuzzlePage() {
+    // Marking on page load is reliable in browsers where async click handlers
+    // can be interrupted by navigation away from the list page.
+    await storage.markOpenedIfEmpty(window.location.href);
+    await refreshPuzzlePage();
+  }
+
+  function scheduleListRefresh() {
     window.clearTimeout(scanTimer);
     scanTimer = window.setTimeout(() => {
-      refresh().catch((error) => {
-        console.warn("CTC Progress Tracker: refresh failed", error);
+      refreshListPage().catch((error) => {
+        console.warn("CTC Progress Tracker: list refresh failed", error);
       });
     }, 150);
   }
@@ -201,12 +241,21 @@
     return;
   }
 
-  refresh().catch((error) => {
-    console.warn("CTC Progress Tracker: initial load failed", error);
-  });
+  if (isPuzzlePage()) {
+    initPuzzlePage().catch((error) => {
+      console.warn("CTC Progress Tracker: puzzle load failed", error);
+    });
+    return;
+  }
 
-  new MutationObserver(scheduleRefresh).observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  if (isListPage()) {
+    refreshListPage().catch((error) => {
+      console.warn("CTC Progress Tracker: initial list load failed", error);
+    });
+
+    new MutationObserver(scheduleListRefresh).observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
 })();
