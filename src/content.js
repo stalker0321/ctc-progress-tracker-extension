@@ -132,6 +132,7 @@
   function applyListStatus(entry, record) {
     const status = record ? storage.statusCodeToName(record.s) : "untouched";
     const badge = ensureListBadge(entry);
+    const statusLabel = formatStatusLabel(status, record);
 
     removeStateClasses(entry.row);
     if (status !== "untouched") {
@@ -139,7 +140,7 @@
     }
 
     entry.row.dataset.ctcProgressStatus = status;
-    badge.textContent = status === "untouched" ? "" : status;
+    badge.textContent = status === "untouched" ? "" : statusLabel;
     badge.hidden = status === "untouched";
   }
 
@@ -237,16 +238,24 @@
     const status = record ? storage.statusCodeToName(record.s) : "untouched";
     const panel = ensurePuzzlePanel();
     const badge = panel.querySelector(".ctc-progress-badge");
+    const statusLabel = formatStatusLabel(status, record);
 
     removeStateClasses(panel);
     if (status !== "untouched") {
       panel.classList.add(`${STATE_CLASS_PREFIX}${status}`);
     }
 
-    badge.textContent = status === "untouched" ? "untouched" : status;
+    badge.textContent = status === "untouched" ? "untouched" : statusLabel;
     panel.querySelector('[data-status="todo"]').disabled = status === "todo";
     panel.querySelector('[data-status="solved"]').disabled = status === "solved";
     panel.querySelector('[data-status="clear"]').disabled = status === "untouched";
+  }
+
+  function formatStatusLabel(status, record) {
+    if (status === "solved" && record && record.d) {
+      return `solved ${record.d}`;
+    }
+    return status;
   }
 
   async function refreshPuzzlePage() {
@@ -304,12 +313,14 @@
       return;
     }
 
-    solvedPopupDetected = true;
+    const solveDuration = extractSolveDuration(dialog);
     const target = await getCurrentPuzzleTarget();
     if (!target) {
       return;
     }
-    await storage.setStatusByKey(target.key, "solved", target.url);
+
+    solvedPopupDetected = true;
+    await storage.setStatusByKey(target.key, "solved", target.url, { d: solveDuration });
     if (isPuzzlePage()) {
       await refreshPuzzlePage();
     }
@@ -341,6 +352,14 @@
     }
 
     return null;
+  }
+
+  function extractSolveDuration(dialog) {
+    const clipboardText = dialog.querySelector("#clipboardcopy") &&
+      dialog.querySelector("#clipboardcopy").textContent;
+    const text = clipboardText || dialog.textContent || "";
+    const match = String(text).match(/Time:\s*([0-9:.]+)/i);
+    return match ? match[1].trim().slice(0, 32) : undefined;
   }
 
   function normalizeText(value) {
