@@ -8,6 +8,7 @@ Manifest V3 Chromium-family browser extension for tracking progress on the Crack
 - Adds `Todo`, `Solved`, and `Clear` controls on the individual puzzle page.
 - Automatically marks a puzzle as `opened` when its puzzle page loads, but only when that puzzle has no existing status.
 - Automatically marks a puzzle as `solved` when the CTC solve-confirmation dialog appears.
+- Stores the solve duration shown in the SudokuPad solve dialog when automatic solved detection can read it.
 - Tracks the last opened puzzle and shows it in the list toolbar and popup.
 - Shows lightweight visual states on the list:
   - `untouched`: no stored record and no highlight
@@ -60,6 +61,7 @@ Schema:
   - `s`: status code, one of `o`, `t`, or `s`
   - `t`: update timestamp in epoch milliseconds
   - `u`: normalized puzzle URL, included for human-readable export/import backups
+  - `d`: optional solve duration from the SudokuPad solved dialog, such as `16:11`, stored only when available
 - Last opened puzzle metadata is stored in `ctcProgress:meta.lastOpened` with compact key `k`, normalized URL `u`, timestamp `t`, and optional page title. JSON export/import includes this metadata.
 
 Status codes:
@@ -99,6 +101,7 @@ No broader CTC or SudokuPad permissions are requested.
 - Set a puzzle to `Todo`, reopen it, and confirm it remains `Todo`.
 - Set a puzzle to `Solved`, reopen it, and confirm it remains `Solved`.
 - Solve a puzzle and confirm the congratulations dialog automatically marks it `Solved`.
+- Confirm the solved badge includes the solve duration from the dialog when SudokuPad shows one.
 - Change a `Todo` puzzle to `Solved` from the puzzle page.
 - Clear a `Solved` puzzle from the puzzle page and confirm the list highlight and badge disappear.
 - Use `Hide solved`, `Only todo`, and `Show all`.
