@@ -39,9 +39,27 @@
   }
 
   function findPuzzleRow(anchor) {
-    // Prefer the list item used by the current CTC list/filter pages. Fall back
-    // to nearby row-like containers so layout changes fail softly.
-    return anchor.closest("li, tr, article, section, div") || anchor.parentElement;
+    // Prefer real row/list containers. For generic div/section layouts, choose
+    // the smallest nearby container that appears to hold only this puzzle link;
+    // broad page containers can include the toolbar and must not be filter-hidden.
+    const semanticRow = anchor.closest("li, tr, article");
+    if (semanticRow) {
+      return semanticRow;
+    }
+
+    let candidate = anchor.parentElement;
+    while (candidate && candidate !== document.body) {
+      if (candidate.matches("div, section")) {
+        const playableLinks = Array.from(candidate.querySelectorAll("a[href]"))
+          .filter(isPlayablePuzzleLink);
+        if (playableLinks.length === 1 && !candidate.querySelector(".ctc-progress-toolbar")) {
+          return candidate;
+        }
+      }
+      candidate = candidate.parentElement;
+    }
+
+    return anchor.parentElement;
   }
 
   function getPuzzleEntries() {
@@ -171,6 +189,11 @@
 
   function applyFilter() {
     for (const row of document.querySelectorAll("[data-ctc-progress-status]")) {
+      if (row.matches(".ctc-progress-toolbar") || row.querySelector(".ctc-progress-toolbar")) {
+        row.classList.remove("ctc-progress-hidden");
+        continue;
+      }
+
       const status = row.dataset.ctcProgressStatus;
       const hide = (currentFilter === "hide-solved" && status === "solved") ||
         (currentFilter === "todo" && status !== "todo");

@@ -86,7 +86,7 @@ No broader CTC or SudokuPad permissions are requested.
 
 - The live page currently renders puzzle entries as list items containing playable links like `/sudoku?id=3310` and separate watch links like `/sudokuwatch?id=3310`.
 - Detection intentionally keys only on playable `/sudoku?id=...` links and ignores watch links.
-- Row detection prefers the nearest `li`, then falls back to nearby row-like containers. If CTC changes to a very different layout, controls may appear in a less ideal location or not appear.
+- Row detection prefers the nearest `li`, `tr`, or `article`, then falls back to the smallest nearby `div` or `section` that appears to contain one playable puzzle link. If CTC changes to a very different layout, controls may appear in a less ideal location or not appear.
 - The extension observes DOM changes on list pages and rescans defensively, but it does not depend on any official CTC API.
 - Automatic solved detection runs inside the embedded SudokuPad iframe and depends on the solve dialog containing text like `You solved the puzzle` and `The solution is correct`, or the current dialog IDs `clipboardcopy` and `solvedcounter`.
 
