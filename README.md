@@ -76,6 +76,7 @@ The extension uses 64 shards because Chromium-family sync storage has small per-
 - `https://crackingthecryptic.com/sudokus*`: shows status badges and list filters on the CTC sudoku list page.
 - `https://crackingthecryptic.com/filter*`: covers CTC's filtered sudoku result page, which is the same list experience after submitting the site filter form.
 - `https://crackingthecryptic.com/sudoku*`: marks puzzles as opened and shows manual status controls on individual puzzle pages.
+- `https://sudokupad.app/*`: detects the solved confirmation dialog inside the embedded SudokuPad puzzle iframe.
 
 No broader CTC or SudokuPad permissions are requested.
 
@@ -85,7 +86,7 @@ No broader CTC or SudokuPad permissions are requested.
 - Detection intentionally keys only on playable `/sudoku?id=...` links and ignores watch links.
 - Row detection prefers the nearest `li`, then falls back to nearby row-like containers. If CTC changes to a very different layout, controls may appear in a less ideal location or not appear.
 - The extension observes DOM changes on list pages and rescans defensively, but it does not depend on any official CTC API.
-- Automatic solved detection depends on the CTC solve dialog containing text like `You solved the puzzle` and `The solution is correct`, or the current dialog IDs `clipboardcopy` and `solvedcounter`.
+- Automatic solved detection runs inside the embedded SudokuPad iframe and depends on the solve dialog containing text like `You solved the puzzle` and `The solution is correct`, or the current dialog IDs `clipboardcopy` and `solvedcounter`.
 
 ## Manual test checklist
 
