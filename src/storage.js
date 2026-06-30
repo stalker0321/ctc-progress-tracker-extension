@@ -175,6 +175,12 @@
     return CODE_TO_STATUS[code] || "untouched";
   }
 
+  function sanitizeSolveDuration(value) {
+    return typeof value === "string" && value.trim()
+      ? value.trim().slice(0, 32)
+      : undefined;
+  }
+
   function cleanRecord(record, fallbackTime) {
     if (!record || typeof record !== "object") {
       return null;
@@ -188,7 +194,8 @@
     return {
       s: code,
       t: Number.isFinite(record.t) ? record.t : fallbackTime,
-      u: typeof record.u === "string" ? record.u : undefined
+      u: typeof record.u === "string" ? record.u : undefined,
+      d: sanitizeSolveDuration(record.d)
     };
   }
 
@@ -215,7 +222,7 @@
     });
   }
 
-  async function setStatusByKey(key, status, sourceUrl) {
+  async function setStatusByKey(key, status, sourceUrl, details) {
     const code = normalizeStatusCode(status);
     if (!code) {
       throw new Error(`Invalid status: ${status}`);
@@ -228,7 +235,10 @@
       shard[key] = {
         s: code,
         t: Date.now(),
-        u: sourceUrl ? normalizePuzzleUrl(sourceUrl) : undefined
+        u: sourceUrl ? normalizePuzzleUrl(sourceUrl) : undefined,
+        d: code === STATUS_TO_CODE.solved && details
+          ? sanitizeSolveDuration(details.d)
+          : undefined
       };
 
       await setInArea(areaName, { [shardName]: shard });
