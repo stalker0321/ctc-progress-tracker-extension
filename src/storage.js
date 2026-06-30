@@ -124,6 +124,13 @@
     return url.toString();
   }
 
+  function normalizeAppUrl(input) {
+    const url = new URL(input);
+    url.hash = "";
+    url.search = "";
+    return url.toString();
+  }
+
   function keyFromUrl(input) {
     const normalizedUrl = normalizePuzzleUrl(input);
     const url = new URL(normalizedUrl);
@@ -267,6 +274,41 @@
     await withActiveArea(async (areaName) => writeMeta(areaName, { lastOpened: clean }));
   }
 
+  async function setAppPuzzleMapping(appUrl, puzzleUrl, title) {
+    const appKey = normalizeAppUrl(appUrl);
+    const puzzleKey = keyFromUrl(puzzleUrl);
+    const puzzleRecord = {
+      k: puzzleKey,
+      u: normalizePuzzleUrl(puzzleUrl),
+      title: typeof title === "string" ? title.slice(0, 160) : undefined,
+      t: Date.now()
+    };
+
+    await withActiveArea(async (areaName) => {
+      const items = await getFromArea(areaName, META_KEY);
+      const meta = items[META_KEY] || {};
+      const appPuzzleMap = { ...(meta.appPuzzleMap || {}) };
+      appPuzzleMap[appKey] = puzzleRecord;
+
+      // Keep the mapping small. It only needs to bridge recently opened CTC
+      // puzzle pages to their SudokuPad iframe URL for solved-popup detection.
+      const sorted = Object.entries(appPuzzleMap)
+        .sort((left, right) => (right[1].t || 0) - (left[1].t || 0))
+        .slice(0, 100);
+
+      await writeMeta(areaName, { appPuzzleMap: Object.fromEntries(sorted) });
+    });
+  }
+
+  async function getPuzzleMappingForAppUrl(appUrl) {
+    const appKey = normalizeAppUrl(appUrl);
+    return withActiveArea(async (areaName) => {
+      const items = await getFromArea(areaName, META_KEY);
+      const meta = items[META_KEY] || {};
+      return meta.appPuzzleMap && meta.appPuzzleMap[appKey] ? meta.appPuzzleMap[appKey] : null;
+    });
+  }
+
   async function clearStatusByKey(key) {
     return withActiveArea(async (areaName) => {
       const shardName = shardNameForKey(key);
@@ -396,6 +438,7 @@
     STATUS_TO_CODE,
     CODE_TO_STATUS,
     normalizePuzzleUrl,
+    normalizeAppUrl,
     keyFromUrl,
     statusCodeToName,
     getStatusByKey,
@@ -405,6 +448,8 @@
     markOpenedIfEmpty,
     markLastOpened,
     setLastOpenedRecord,
+    setAppPuzzleMapping,
+    getPuzzleMappingForAppUrl,
     clearStatusByKey,
     importStatuses,
     clearAllStatuses,
