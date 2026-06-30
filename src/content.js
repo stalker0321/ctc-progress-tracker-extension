@@ -5,6 +5,7 @@
   const STATE_CLASS_PREFIX = "ctc-progress-state-";
   let currentFilter = "all";
   let scanTimer = null;
+  let solvedPopupDetected = false;
 
   function currentUrl() {
     return new URL(window.location.href);
@@ -254,11 +255,63 @@
     await storage.markOpenedIfEmpty(window.location.href);
     await storage.markLastOpened(window.location.href, getPuzzleTitle());
     await refreshPuzzlePage();
+    watchSolvedPopup();
   }
 
   function getPuzzleTitle() {
     const heading = document.querySelector("h1");
     return heading && heading.textContent.trim() ? heading.textContent.trim() : document.title;
+  }
+
+  function watchSolvedPopup() {
+    detectSolvedPopup().catch((error) => {
+      console.warn("CTC Progress Tracker: solved popup detection failed", error);
+    });
+
+    new MutationObserver(() => {
+      detectSolvedPopup().catch((error) => {
+        console.warn("CTC Progress Tracker: solved popup detection failed", error);
+      });
+    }).observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  async function detectSolvedPopup() {
+    if (solvedPopupDetected) {
+      return;
+    }
+
+    const dialog = findSolvedDialog();
+    if (!dialog) {
+      return;
+    }
+
+    solvedPopupDetected = true;
+    const key = storage.keyFromUrl(window.location.href);
+    await storage.setStatusByKey(key, "solved", window.location.href);
+    await refreshPuzzlePage();
+  }
+
+  function findSolvedDialog() {
+    for (const dialog of document.querySelectorAll(".dialog-overlay .dialog, [role='dialog'], dialog")) {
+      const text = normalizeText(dialog.textContent);
+      const hasSolvedText = text.includes("you solved the puzzle") &&
+        text.includes("solution is correct");
+      const hasCtcSolvedShape = dialog.querySelector("#clipboardcopy") &&
+        dialog.querySelector("#solvedcounter");
+
+      if (hasSolvedText || hasCtcSolvedShape) {
+        return dialog;
+      }
+    }
+
+    return null;
+  }
+
+  function normalizeText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
   }
 
   function scheduleListRefresh() {
