@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CTC Progress Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="ctc-progress-popup">
+  <main>
+    <h1>CTC Progress Tracker</h1>
+    <section class="ctc-progress-counts" aria-label="Status counts">
+      <div class="ctc-progress-count">
+        <span>Opened</span>
+        <strong id="opened-count">0</strong>
+      </div>
+      <div class="ctc-progress-count">
+        <span>Todo</span>
+        <strong id="todo-count">0</strong>
+      </div>
+      <div class="ctc-progress-count">
+        <span>Solved</span>
+        <strong id="solved-count">0</strong>
+      </div>
+    </section>
+    <section class="ctc-progress-diagnostics" aria-label="Storage diagnostics">
+      <div><strong>Storage:</strong> <span id="storage-mode">Checking</span></div>
+      <div><strong>Sync API:</strong> <span id="sync-available">Checking</span></div>
+      <div><strong>Last write:</strong> <span id="last-write">Never</span></div>
+      <button type="button" id="test-storage">Test sync write/read</button>
+    </section>
+    <section class="ctc-progress-popup-actions" aria-label="Backup actions">
+      <button type="button" id="export-json">Export JSON</button>
+      <button type="button" id="import-json">Import JSON</button>
+      <button type="button" id="clear-all">Clear all data</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </section>
+    <p class="ctc-progress-message" id="message" role="status"></p>
+  </main>
+  <script src="storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
