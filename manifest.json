@@ -1,18 +1,22 @@
 {
   "manifest_version": 3,
   "name": "CTC Progress Tracker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Track opened, todo, and solved Cracking the Cryptic sudoku list entries.",
   "permissions": [
     "storage"
   ],
   "host_permissions": [
-    "https://crackingthecryptic.com/sudokus*"
+    "https://crackingthecryptic.com/sudokus*",
+    "https://crackingthecryptic.com/filter*",
+    "https://crackingthecryptic.com/sudoku*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://crackingthecryptic.com/sudokus*"
+        "https://crackingthecryptic.com/sudokus*",
+        "https://crackingthecryptic.com/filter*",
+        "https://crackingthecryptic.com/sudoku*"
       ],
       "js": [
         "src/storage.js",
