@@ -239,6 +239,34 @@
     return setStatusByKey(key, "opened", url);
   }
 
+  async function markLastOpened(url, title) {
+    const normalizedUrl = normalizePuzzleUrl(url);
+    const lastOpened = {
+      k: keyFromUrl(normalizedUrl),
+      u: normalizedUrl,
+      t: Date.now(),
+      title: typeof title === "string" ? title.slice(0, 160) : undefined
+    };
+
+    return withActiveArea(async (areaName) => writeMeta(areaName, { lastOpened }));
+  }
+
+  async function setLastOpenedRecord(lastOpened) {
+    if (!lastOpened || typeof lastOpened.u !== "string") {
+      return;
+    }
+
+    const normalizedUrl = normalizePuzzleUrl(lastOpened.u);
+    const clean = {
+      k: typeof lastOpened.k === "string" ? lastOpened.k : keyFromUrl(normalizedUrl),
+      u: normalizedUrl,
+      t: Number.isFinite(lastOpened.t) ? lastOpened.t : Date.now(),
+      title: typeof lastOpened.title === "string" ? lastOpened.title.slice(0, 160) : undefined
+    };
+
+    await withActiveArea(async (areaName) => writeMeta(areaName, { lastOpened: clean }));
+  }
+
   async function clearStatusByKey(key) {
     return withActiveArea(async (areaName) => {
       const shardName = shardNameForKey(key);
@@ -337,7 +365,8 @@
       localAvailable,
       activeArea: active,
       lastWriteAt: meta && meta.lastWriteAt ? meta.lastWriteAt : null,
-      lastSyncTestAt: meta && meta.lastSyncTestAt ? meta.lastSyncTestAt : null
+      lastSyncTestAt: meta && meta.lastSyncTestAt ? meta.lastSyncTestAt : null,
+      lastOpened: meta && meta.lastOpened ? meta.lastOpened : null
     };
   }
 
@@ -374,6 +403,8 @@
     getAllStatuses,
     setStatusByKey,
     markOpenedIfEmpty,
+    markLastOpened,
+    setLastOpenedRecord,
     clearStatusByKey,
     importStatuses,
     clearAllStatuses,
