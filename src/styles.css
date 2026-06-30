@@ -35,6 +35,17 @@
   margin-right: 2px;
 }
 
+.ctc-progress-last-opened {
+  color: #374151;
+  font: 12px/1.2 Arial, sans-serif;
+  margin-right: 4px;
+}
+
+.ctc-progress-last-opened a {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
 .ctc-progress-toolbar button,
 .ctc-progress-puzzle-panel button,
 .ctc-progress-controls button {
@@ -85,6 +96,11 @@
 
 .ctc-progress-state-opened {
   background: rgba(59, 130, 246, 0.08);
+}
+
+.ctc-progress-last-row {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 1px;
 }
 
 .ctc-progress-state-opened .ctc-progress-badge {
@@ -198,4 +214,14 @@ body.ctc-progress-popup {
   color: #374151;
   min-height: 18px;
   margin-top: 10px;
+}
+
+#last-opened a {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+#last-opened small {
+  color: #6b7280;
+  display: block;
 }
