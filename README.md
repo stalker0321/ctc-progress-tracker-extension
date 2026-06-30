@@ -4,8 +4,9 @@ Manifest V3 Chromium-family browser extension for tracking progress on the Crack
 
 ## What it does
 
-- Adds small controls beside each detected playable puzzle link: `Todo`, `Solved`, and `Clear`.
-- Automatically marks a puzzle as `opened` when its playable puzzle link is clicked, but only when that puzzle has no existing status.
+- Adds small status badges beside detected playable puzzle links on the sudoku list and filtered result pages.
+- Adds `Todo`, `Solved`, and `Clear` controls on the individual puzzle page.
+- Automatically marks a puzzle as `opened` when its puzzle page loads, but only when that puzzle has no existing status.
 - Shows lightweight visual states on the list:
   - `untouched`: no stored record and no highlight
   - `opened`: subtle blue/neutral tint and badge
@@ -69,27 +70,30 @@ The extension uses 64 shards because Chromium-family sync storage has small per-
 ## Permissions
 
 - `storage`: stores progress in browser extension storage.
-- `https://crackingthecryptic.com/sudokus*`: injects the progress controls only on the CTC sudoku list page.
+- `https://crackingthecryptic.com/sudokus*`: shows status badges and list filters on the CTC sudoku list page.
+- `https://crackingthecryptic.com/filter*`: covers CTC's filtered sudoku result page, which is the same list experience after submitting the site filter form.
+- `https://crackingthecryptic.com/sudoku*`: marks puzzles as opened and shows manual status controls on individual puzzle pages.
 
-No broader site permissions are requested.
+No broader CTC or SudokuPad permissions are requested.
 
 ## Known fragile parts
 
 - The live page currently renders puzzle entries as list items containing playable links like `/sudoku?id=3310` and separate watch links like `/sudokuwatch?id=3310`.
 - Detection intentionally keys only on playable `/sudoku?id=...` links and ignores watch links.
 - Row detection prefers the nearest `li`, then falls back to nearby row-like containers. If CTC changes to a very different layout, controls may appear in a less ideal location or not appear.
-- The extension observes DOM changes and rescans defensively, but it does not depend on any official CTC API.
-- Filter results may not be covered if CTC navigates away from `/sudokus`, because the extension intentionally requests only the minimal sudoku-list host permission.
+- The extension observes DOM changes on list pages and rescans defensively, but it does not depend on any official CTC API.
 
 ## Manual test checklist
 
 - Load the unpacked extension and open `https://crackingthecryptic.com/sudokus`.
-- Confirm each puzzle row gets `Todo`, `Solved`, and `Clear` controls.
-- Click a puzzle title and confirm it is marked `opened` after returning to the list.
-- Set a puzzle to `Todo`, click its title, and confirm it remains `Todo`.
-- Set a puzzle to `Solved`, click its title, and confirm it remains `Solved`.
-- Change a `Todo` puzzle to `Solved`.
-- Clear a `Solved` puzzle and confirm the highlight and badge disappear.
+- Confirm puzzle rows get status badges only, not `Todo`, `Solved`, and `Clear` buttons.
+- Use the CTC filter form and confirm the `/filter` result page still shows the toolbar and status badges.
+- Open a puzzle title and confirm the puzzle page shows `Todo`, `Solved`, and `Clear` controls.
+- Return to the list and confirm that puzzle is marked `opened`.
+- Set a puzzle to `Todo`, reopen it, and confirm it remains `Todo`.
+- Set a puzzle to `Solved`, reopen it, and confirm it remains `Solved`.
+- Change a `Todo` puzzle to `Solved` from the puzzle page.
+- Clear a `Solved` puzzle from the puzzle page and confirm the list highlight and badge disappear.
 - Use `Hide solved`, `Only todo`, and `Show all`.
 - Open the extension popup and confirm counts match visible statuses.
 - Confirm the popup shows synced storage or local-only storage clearly.
