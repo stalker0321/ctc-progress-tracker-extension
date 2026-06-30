@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CTC Progress Tracker",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Track opened, todo, and solved Cracking the Cryptic sudoku list entries.",
   "permissions": [
     "storage"
