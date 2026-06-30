@@ -72,6 +72,7 @@
     toolbar.className = "ctc-progress-toolbar";
     toolbar.innerHTML = `
       <span class="ctc-progress-toolbar-title">Progress</span>
+      <span class="ctc-progress-last-opened" hidden></span>
       <button type="button" data-filter="all">Show all</button>
       <button type="button" data-filter="hide-solved">Hide solved</button>
       <button type="button" data-filter="todo">Only todo</button>
@@ -135,6 +136,31 @@
     badge.hidden = status === "untouched";
   }
 
+  function applyLastOpened(entries, lastOpened) {
+    const container = document.querySelector(".ctc-progress-last-opened");
+    for (const entry of entries) {
+      entry.row.classList.toggle("ctc-progress-last-row", Boolean(lastOpened && entry.key === lastOpened.k));
+    }
+
+    if (!container) {
+      return;
+    }
+
+    if (!lastOpened || !lastOpened.u) {
+      container.hidden = true;
+      container.textContent = "";
+      return;
+    }
+
+    const label = lastOpened.title || lastOpened.k.replace(/^s:/, "Puzzle ");
+    container.hidden = false;
+    container.innerHTML = `<span>Last opened:</span> <a></a>`;
+    const anchor = container.querySelector("a");
+    anchor.href = lastOpened.u;
+    anchor.textContent = label;
+    anchor.title = lastOpened.t ? new Date(lastOpened.t).toLocaleString() : "";
+  }
+
   function applyFilter() {
     for (const row of document.querySelectorAll("[data-ctc-progress-status]")) {
       const status = row.dataset.ctcProgressStatus;
@@ -148,11 +174,13 @@
     ensureListToolbar();
     const entries = getPuzzleEntries();
     const statuses = await storage.getStatusesForKeys(entries.map((entry) => entry.key));
+    const diagnostics = await storage.getDiagnostics();
 
     for (const entry of entries) {
       applyListStatus(entry, statuses[entry.key]);
     }
 
+    applyLastOpened(entries, diagnostics.lastOpened);
     applyFilter();
   }
 
@@ -224,7 +252,13 @@
     // Marking on page load is reliable in browsers where async click handlers
     // can be interrupted by navigation away from the list page.
     await storage.markOpenedIfEmpty(window.location.href);
+    await storage.markLastOpened(window.location.href, getPuzzleTitle());
     await refreshPuzzlePage();
+  }
+
+  function getPuzzleTitle() {
+    const heading = document.querySelector("h1");
+    return heading && heading.textContent.trim() ? heading.textContent.trim() : document.title;
   }
 
   function scheduleListRefresh() {
