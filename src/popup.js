@@ -30,6 +30,23 @@
       : "Local-only storage";
     document.querySelector("#sync-available").textContent = diagnostics.syncAvailable ? "Available" : "Unavailable";
     document.querySelector("#last-write").textContent = formatDate(diagnostics.lastWriteAt);
+    renderLastOpened(diagnostics.lastOpened);
+  }
+
+  function renderLastOpened(lastOpened) {
+    const target = document.querySelector("#last-opened");
+    if (!lastOpened || !lastOpened.u) {
+      target.textContent = "Never";
+      return;
+    }
+
+    target.innerHTML = `<a></a><small></small>`;
+    const anchor = target.querySelector("a");
+    const small = target.querySelector("small");
+    anchor.href = lastOpened.u;
+    anchor.target = "_blank";
+    anchor.textContent = lastOpened.title || lastOpened.k.replace(/^s:/, "Puzzle ");
+    small.textContent = lastOpened.t ? ` ${formatDate(lastOpened.t)}` : "";
   }
 
   async function renderCounts() {
@@ -42,10 +59,14 @@
 
   async function exportJson() {
     const statuses = await storage.getAllStatuses();
+    const diagnostics = await storage.getDiagnostics();
     const payload = {
-      schema: "ctc-progress-tracker.v1",
+      schema: "ctc-progress-tracker.v2",
       exportedAt: new Date().toISOString(),
-      statuses
+      statuses,
+      meta: {
+        lastOpened: diagnostics.lastOpened || null
+      }
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -65,6 +86,9 @@
       : payload;
 
     await storage.importStatuses(statuses);
+    if (payload.meta && payload.meta.lastOpened) {
+      await storage.setLastOpenedRecord(payload.meta.lastOpened);
+    }
     await renderCounts();
     await renderDiagnostics();
     setMessage("Imported JSON backup.");
