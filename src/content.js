@@ -18,7 +18,13 @@
 
   function isPuzzlePage() {
     const url = currentUrl();
-    return url.pathname === "/sudoku" && url.searchParams.has("id");
+    return url.hostname === "crackingthecryptic.com" &&
+      url.pathname === "/sudoku" &&
+      url.searchParams.has("id");
+  }
+
+  function isSudokuPadPage() {
+    return currentUrl().hostname === "sudokupad.app";
   }
 
   function isPlayablePuzzleLink(anchor) {
@@ -254,8 +260,18 @@
     // can be interrupted by navigation away from the list page.
     await storage.markOpenedIfEmpty(window.location.href);
     await storage.markLastOpened(window.location.href, getPuzzleTitle());
+    await storeSudokuPadMapping();
     await refreshPuzzlePage();
     watchSolvedPopup();
+  }
+
+  async function storeSudokuPadMapping() {
+    const iframe = document.querySelector('iframe[src*="sudokupad.app"]');
+    if (!iframe || !iframe.src) {
+      return;
+    }
+
+    await storage.setAppPuzzleMapping(iframe.src, window.location.href, getPuzzleTitle());
   }
 
   function getPuzzleTitle() {
@@ -289,9 +305,26 @@
     }
 
     solvedPopupDetected = true;
-    const key = storage.keyFromUrl(window.location.href);
-    await storage.setStatusByKey(key, "solved", window.location.href);
-    await refreshPuzzlePage();
+    const target = await getCurrentPuzzleTarget();
+    if (!target) {
+      return;
+    }
+    await storage.setStatusByKey(target.key, "solved", target.url);
+    if (isPuzzlePage()) {
+      await refreshPuzzlePage();
+    }
+  }
+
+  async function getCurrentPuzzleTarget() {
+    if (isSudokuPadPage()) {
+      const mapping = await storage.getPuzzleMappingForAppUrl(window.location.href);
+      return mapping ? { key: mapping.k, url: mapping.u } : null;
+    }
+
+    return {
+      key: storage.keyFromUrl(window.location.href),
+      url: window.location.href
+    };
   }
 
   function findSolvedDialog() {
@@ -332,6 +365,11 @@
     initPuzzlePage().catch((error) => {
       console.warn("CTC Progress Tracker: puzzle load failed", error);
     });
+    return;
+  }
+
+  if (isSudokuPadPage()) {
+    watchSolvedPopup();
     return;
   }
 
