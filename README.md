@@ -7,6 +7,7 @@ Manifest V3 Chromium-family browser extension for tracking progress on the Crack
 - Adds small status badges beside detected playable puzzle links on the sudoku list and filtered result pages.
 - Adds `Todo`, `Solved`, and `Clear` controls on the individual puzzle page.
 - Automatically marks a puzzle as `opened` when its puzzle page loads, but only when that puzzle has no existing status.
+- Automatically marks a puzzle as `solved` when the CTC solve-confirmation dialog appears.
 - Tracks the last opened puzzle and shows it in the list toolbar and popup.
 - Shows lightweight visual states on the list:
   - `untouched`: no stored record and no highlight
@@ -84,6 +85,7 @@ No broader CTC or SudokuPad permissions are requested.
 - Detection intentionally keys only on playable `/sudoku?id=...` links and ignores watch links.
 - Row detection prefers the nearest `li`, then falls back to nearby row-like containers. If CTC changes to a very different layout, controls may appear in a less ideal location or not appear.
 - The extension observes DOM changes on list pages and rescans defensively, but it does not depend on any official CTC API.
+- Automatic solved detection depends on the CTC solve dialog containing text like `You solved the puzzle` and `The solution is correct`, or the current dialog IDs `clipboardcopy` and `solvedcounter`.
 
 ## Manual test checklist
 
@@ -95,6 +97,7 @@ No broader CTC or SudokuPad permissions are requested.
 - Confirm the list toolbar and popup show that puzzle as the last opened puzzle.
 - Set a puzzle to `Todo`, reopen it, and confirm it remains `Todo`.
 - Set a puzzle to `Solved`, reopen it, and confirm it remains `Solved`.
+- Solve a puzzle and confirm the congratulations dialog automatically marks it `Solved`.
 - Change a `Todo` puzzle to `Solved` from the puzzle page.
 - Clear a `Solved` puzzle from the puzzle page and confirm the list highlight and badge disappear.
 - Use `Hide solved`, `Only todo`, and `Show all`.
