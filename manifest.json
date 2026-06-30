@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "CTC Progress Tracker",
+  "version": "0.2.0",
+  "description": "Track opened, todo, and solved Cracking the Cryptic sudoku list entries.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://crackingthecryptic.com/sudokus*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://crackingthecryptic.com/sudokus*"
+      ],
+      "js": [
+        "src/storage.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "CTC Progress Tracker",
+    "default_popup": "src/popup.html"
+  }
+}
