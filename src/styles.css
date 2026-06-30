@@ -14,6 +14,20 @@
   z-index: 20;
 }
 
+.ctc-progress-puzzle-panel {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 20px;
+  max-width: 760px;
+  padding: 8px;
+  z-index: 20;
+}
+
 .ctc-progress-toolbar-title {
   color: #374151;
   font-size: 12px;
@@ -22,6 +36,7 @@
 }
 
 .ctc-progress-toolbar button,
+.ctc-progress-puzzle-panel button,
 .ctc-progress-controls button {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
@@ -33,11 +48,13 @@
 }
 
 .ctc-progress-toolbar button:hover,
+.ctc-progress-puzzle-panel button:hover,
 .ctc-progress-controls button:hover {
   background: #eef2f7;
 }
 
 .ctc-progress-toolbar button.ctc-progress-active,
+.ctc-progress-puzzle-panel button:disabled,
 .ctc-progress-controls button:disabled {
   background: #dbeafe;
   border-color: #93c5fd;
@@ -59,6 +76,11 @@
   min-width: 0;
   padding: 3px 5px;
   text-transform: uppercase;
+}
+
+.ctc-progress-list-badge {
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 .ctc-progress-state-opened {
